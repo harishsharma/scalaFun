@@ -6,19 +6,20 @@ import rx.functions.Func1;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * @author harish.sharma
  */
 public class JavaFun {
 
-    public static Observable<Integer> obs(List<Integer> list) {
+    public static <T> Observable<T> obs(List<T> list) {
 
-        return Observable.create(new Observable.OnSubscribe<Integer>() {
+        return Observable.create(new Observable.OnSubscribe<T>() {
             @Override
-            public void call(Subscriber<? super Integer> subscriber) {
+            public void call(Subscriber<? super T> subscriber) {
                 try {
-                    for (Integer i : list) {
+                    for (T i : list) {
                         subscriber.onNext(i);
                     }
                     subscriber.onCompleted();
@@ -29,10 +30,58 @@ public class JavaFun {
         });
     }
 
+    public static <T> Observable<T> nothing() {
+        return Observable.create(new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> subscriber) {
+                //do nothing
+            }
+        });
+    }
+
+    public static <T> Observable<T> error(Throwable e) {
+        return Observable.create(new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> subscriber) {
+                subscriber.onError(e);
+            }
+        });
+    }
+
+    public static <T> Observable<T> startsWith(List<T> items, Observable<T> orig) {
+
+        return Observable.create(new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> subscriber) {
+                for (T item : items)
+                    subscriber.onNext(item);
+                orig.subscribe(subscriber);
+            }
+        });
+    }
+
+    public static <T> Observable<T> filter(Function<T, Boolean> predicate, Observable<T> orig) {
+        return Observable.create(new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> subscriber) {
+                System.out.println("Before Before");
+                //incomplete
+            }
+        });
+    }
+
+
+    public static <T, S> Observable<S> map(Function<T, S> mapper, Observable<T> orig) {
+        return null;
+    }
+
+
     public static void main(String[] arg) {
         List<Integer> list = new ArrayList() {{
             add(1);
             add(2);
+            add(3);
+            add(4);
         }};
         Observable<Integer> listObs = obs(list);
 
@@ -52,7 +101,6 @@ public class JavaFun {
                 System.out.println("Thread " + Thread.currentThread().getName() + " : int " + integer);
             }
         };
-        listObs.subscribe(subs);
 
         Observable<Integer> map = listObs.map(new Func1<Integer, Integer>() {
 
@@ -62,7 +110,18 @@ public class JavaFun {
             }
         });
 
-        map.subscribe(subs);
-
+//        listObs.subscribe(subs);
+//        map.subscribe(subs);
+//        Observable<Integer> nothing = nothing();
+//        nothing.subscribe(subs);
+//        Observable<Integer> error = error(new NullPointerException());
+//        error.subscribe(subs);
+//        Observable<Integer> startsWith = startsWith(new ArrayList<Integer>() {{
+//            add(11);
+//            add(12);
+//        }}, error);
+//        startsWith.subscribe(subs);
+        Observable<Integer> filter = filter(t -> t % 2 == 1, listObs);
+        filter.subscribe(subs);
     }
 }
